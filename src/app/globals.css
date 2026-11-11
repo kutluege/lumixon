@@ -1,0 +1,355 @@
+@import "tailwindcss";
+
+/* Two-zone hero (landscape from md up): narrow copy column beside the robots.
+   Keep in sync with HERO_WIDE_QUERY (src/components/hero/scene/HeroScene.tsx). */
+@custom-variant hero-wide (@media (min-width: 768px) and (min-aspect-ratio: 11/10));
+/* Short phones: the stacked hero copy tightens so the robots above it keep some size. */
+@custom-variant hero-short (@media (max-width: 767px) and (max-height: 820px));
+
+/* ───────────────────────── LUMIXON design tokens ─────────────────────────
+   Brand palette (exact):
+     indigo   #4E5283  primary
+     abyss    #0D160B  dark background
+     ice      #AFC1D6  ice-blue accents
+     burgundy #2E0219  deep burgundy accents
+   Everything else is a tint/shade derived from these.                    */
+
+@theme {
+  --color-indigo: #4e5283;
+  --color-indigo-400: #6c71a8;
+  /* Hover fill for solid indigo buttons: keeps ice-100 text at 4.9:1 (indigo-400 drops to 3.9:1). */
+  --color-indigo-500: #5c6195;
+  --color-indigo-300: #8d92c4;
+  --color-indigo-700: #363a63;
+  --color-indigo-900: #1c1e38;
+
+  /* Surfaces: indigo-tinted midnight built from #4E5283 over #0D160B.
+     Names kept for compatibility; abyss-950 is the page base. */
+  --color-abyss: #0d160b;
+  --color-abyss-950: #181d34;
+  --color-abyss-900: #1d2340;
+  --color-abyss-800: #232a4a;
+  --color-abyss-700: #2e3559;
+
+  --color-ice: #afc1d6;
+  --color-ice-100: #e6edf5;
+  --color-ice-200: #d2dde9;
+  --color-ice-400: #9db0c8;
+  --color-ice-600: #74879f;
+
+  --color-burgundy: #2e0219;
+  --color-burgundy-600: #4a0a2b;
+  --color-burgundy-400: #7a2350;
+  --color-burgundy-300: #a3466f;
+
+  /* Neutral text ramp, tuned for the indigo-midnight base (AA on abyss-800) */
+  --color-fg: #f0f4f9;
+  --color-fg-muted: #bac5d4;
+  --color-fg-subtle: #8f9cb3;
+  --color-line: rgb(175 193 214 / 0.16);
+  --color-line-strong: rgb(175 193 214 / 0.28);
+
+  --font-display: var(--font-archivo), "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+
+  --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-precise: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --container-site: 88rem;
+
+  /* Fluid vertical rhythm shared by every section (py-section, mt-section-gap). */
+  --spacing-section: clamp(5.5rem, 3.25rem + 8vw, 10rem);
+  --spacing-section-gap: clamp(3.5rem, 2.5rem + 4vw, 6rem);
+
+  /* Fluid section headline (text-h2). --display-scale lets wide scripts run smaller. */
+  --text-h2: calc(clamp(2.25rem, 1.25rem + 3.75vw, 4.25rem) * var(--display-scale, 1));
+}
+
+@layer base {
+  html {
+    background: var(--color-abyss-950);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+
+  /* Lenis handles smoothing; native smooth only when Lenis is off */
+  html:not(.lenis) {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not(.lenis) {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background: var(--color-abyss-950);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-indigo-400);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ice-200);
+    outline-offset: 3px;
+  }
+
+  /* Tailwind v4 resets buttons to the default cursor. */
+  button:not(:disabled),
+  [role="tab"] {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Wide, tight display type, the Anduril-style headline voice */
+  .type-display {
+    font-family: var(--font-display);
+    font-stretch: 112%;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 0.96;
+    /* Last resort for compound words wider than their column (de/ru): break rather than overflow.
+       Preferred break points are soft hyphens in the dictionaries. */
+    overflow-wrap: anywhere;
+  }
+
+  /* Hero headline size: width-driven on phones, width- and height-driven from md up. */
+  .type-hero {
+    font-size: calc(clamp(1.85rem, 8.2vw, 3rem) * var(--display-scale, 1));
+  }
+  @media (min-width: 768px) {
+    .type-hero {
+      font-size: calc(clamp(2.75rem, min(5.4vw, 10svh), 5.25rem) * var(--display-scale, 1));
+    }
+  }
+  /* Two-zone hero: sized to its narrow column (about 10.5em wide), so it wraps into a tall block. */
+  @media (min-width: 768px) and (min-aspect-ratio: 11/10) {
+    .type-hero {
+      font-size: calc(clamp(2.25rem, min(4.1vw, 7.5svh), 4rem) * var(--display-scale, 1));
+    }
+    /* zh: each headline phrase stays on one line (the longer one is 12 glyphs). */
+    html:lang(zh-CN) .type-hero {
+      --display-scale: 0.8;
+    }
+  }
+  @media (max-width: 767px) and (max-height: 820px) {
+    .type-hero {
+      font-size: calc(clamp(1.6rem, min(8.2vw, 4.7svh), 3rem) * var(--display-scale, 1));
+    }
+  }
+
+  /* Small technical label: mono, tracked, uppercase */
+  .type-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+
+  .container-site {
+    width: 100%;
+    max-width: var(--container-site);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-site {
+      padding-inline: 2.5rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .container-site {
+      padding-inline: 3.5rem;
+    }
+  }
+
+  /* Buttons: one square-cornered shape, three fills. Height/gap can be overridden with utilities. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 3rem;
+    padding-inline: 1.25rem;
+    border: 1px solid transparent;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.25;
+    transition:
+      background-color 300ms var(--ease-cinematic),
+      border-color 300ms var(--ease-cinematic),
+      color 300ms var(--ease-cinematic),
+      transform 150ms var(--ease-cinematic);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  /* Light fill: the primary action on dark surfaces */
+  .btn-solid {
+    background: var(--color-ice-100);
+    color: var(--color-abyss-950);
+  }
+  .btn-solid:hover {
+    background: #fff;
+  }
+  /* Indigo fill: navigation call to action */
+  .btn-accent {
+    border-color: rgb(108 113 168 / 0.6);
+    background: var(--color-indigo);
+    color: var(--color-ice-100);
+  }
+  .btn-accent:hover {
+    border-color: var(--color-indigo-300);
+    background: var(--color-indigo-500);
+  }
+  /* Outline: secondary action; follows the surrounding theme tokens */
+  .btn-ghost {
+    border-color: var(--color-line-strong);
+    color: var(--color-fg);
+  }
+  .btn-ghost:hover {
+    border-color: color-mix(in srgb, var(--color-ice) 45%, transparent);
+    background: color-mix(in srgb, var(--color-ice) 7%, transparent);
+  }
+
+  /* Hairline engineering grid used as a section backdrop */
+  .bg-blueprint {
+    background-image:
+      linear-gradient(to right, rgb(175 193 214 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(175 193 214 / 0.055) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+  .bg-blueprint-ink {
+    background-image:
+      linear-gradient(to right, rgb(78 82 131 / 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(78 82 131 / 0.08) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+
+  /* Light ice-toned scope: re-points the text/line/surface tokens so any
+     token-classed content inside reads #0D160B-on-ice. Accents shift to
+     deeper palette shades to keep WCAG AA on ice-100. */
+  .theme-ice {
+    --color-fg: #0d160b;
+    --color-fg-muted: #39414f;
+    --color-fg-subtle: #556072;
+    --color-line: rgb(13 22 11 / 0.13);
+    --color-line-strong: rgb(13 22 11 / 0.24);
+    --color-ice: #4e5283;
+    --color-ice-400: #4a4f80;
+    --color-ice-600: #6c71a8;
+    --color-indigo-300: #4e5283;
+    --color-abyss-950: #e6edf5;
+    --color-abyss-800: #d5dfeb;
+    color: var(--color-fg);
+    color-scheme: light;
+  }
+  .theme-ice ::selection {
+    background: var(--color-indigo);
+    color: #fff;
+  }
+  .theme-ice :focus-visible {
+    outline-color: #4e5283;
+  }
+
+  /* Film grain overlay, applied once globally in layout */
+  .grain {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ───────────────────────── Locale typography ─────────────────────────
+   The script-specific font variables (--font-golos, --font-kufi,
+   --font-plex-arabic, --font-noto-sc) are only set on <html> for their own
+   locale (src/i18n/fonts.ts), so these rules never touch the Turkish page.
+   Unlayered on purpose: they must win over Tailwind utilities.            */
+
+/* Russian: Archivo has no Cyrillic; headings use Golos Text throughout. */
+html:lang(ru) {
+  --font-display: var(--font-golos), var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+}
+html:lang(ru) .type-display {
+  letter-spacing: -0.025em;
+}
+
+/* Arabic: Latin tokens keep Archivo/Inter/JetBrains (no-fallback instances); Arabic glyphs fall through. */
+html:lang(ar) {
+  --font-display: var(--font-archivo-nf), var(--font-kufi), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-nf), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-nf), var(--font-plex-arabic), ui-monospace, monospace;
+}
+/* Tracking breaks Arabic joining; uppercase is meaningless for the script. */
+html:lang(ar) .type-display,
+html:lang(ar) .type-label,
+html:lang(ar) [class*="tracking-"] {
+  letter-spacing: 0;
+}
+html:lang(ar) .type-display {
+  line-height: 1.3;
+}
+html:lang(ar) h1.type-display {
+  line-height: 1.35;
+}
+html:lang(ar) .reveal-unit {
+  padding-top: 0.12em;
+  margin-top: -0.12em;
+  padding-bottom: 0.3em;
+  margin-bottom: -0.3em;
+}
+/* Kufi runs much wider and taller than Archivo at the same size. */
+html:lang(ar) {
+  --display-scale: 0.86;
+}
+
+/* Simplified Chinese: CJK glyphs from Noto Sans SC; strict kinsoku line breaking. */
+html:lang(zh-CN) {
+  --font-display: var(--font-archivo-nf), var(--font-noto-sc), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-nf), var(--font-noto-sc), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-nf), var(--font-noto-sc), ui-monospace, monospace;
+  line-break: strict;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  /* Full-width glyphs read larger than Latin at the same size; this also lets each
+     hero phrase sit on one line down to 320px wide screens. */
+  --display-scale: 0.88;
+}
+html:lang(zh-CN) .type-display {
+  letter-spacing: 0;
+  line-height: 1.18;
+  font-weight: 700;
+}
+html:lang(zh-CN) .type-label {
+  letter-spacing: 0.08em;
+}
+html:lang(zh-CN) .reveal-unit {
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+}
