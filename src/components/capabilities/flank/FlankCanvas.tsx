@@ -2,9 +2,9 @@
 
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { FlankQuality } from "./contract";
+import type { FlankKind, FlankQuality } from "./contract";
 
-export type FlankKind = "research" | "field";
+export type { FlankKind };
 
 /*
  * Each scene is its own chunk, fetched only when this canvas host mounts
@@ -13,6 +13,8 @@ export type FlankKind = "research" | "field";
 const SCENES = {
   research: lazy(() => import("./ResearchScene")),
   field: lazy(() => import("./FieldScene")),
+  pathology: lazy(() => import("./PathologyScene")),
+  sonar: lazy(() => import("./SonarScene")),
 };
 
 export type FlankCanvasProps = {

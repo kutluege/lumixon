@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { FlankQuality } from "../contract";
-import { fadeGlsl, fieldGlsl, FIELD_PERIOD, pathZ, terrainHeight, wrapX } from "./terrain";
+import { DRONE_ALT, droneZ, SCAN_TAN, SCAN_XR, SWATH } from "./drone/flight";
+import { fadeGlsl, fieldGlsl, FIELD_PERIOD, LIDAR_RANGE, pathZ, terrainHeight, wrapX } from "./terrain";
 
 /** Uniforms shared (by reference) by every field material; written once per frame. */
 export function makeFieldUniforms() {
@@ -14,6 +15,11 @@ export function makeFieldUniforms() {
     uRes: { value: new THREE.Vector2(1, 1) },
     uPR: { value: 1 },
     uTime: { value: 0 },
+    /** Survey drone: scanner optical centre, airframe centre + yaw, sweeping spot, live-link pulse. */
+    uDrone: { value: new THREE.Vector3(1, DRONE_ALT, 0) },
+    uDroneC: { value: new THREE.Vector4(1, DRONE_ALT, 0, 0) },
+    uSpotZ: { value: 0 },
+    uPulse: { value: -1 },
   };
 }
 
@@ -27,8 +33,14 @@ export type FieldObstacles = {
   /** Each anchor sits at its tile x; the scene sets position.x = wrapX(tileX - s). */
   anchors: { obj: THREE.Object3D; tileX: number }[];
   footprints: THREE.Vector3[];
-  /** Surface samples for the point-cloud map (tile coordinates, pushed off the surface). */
-  samples: { pos: Float32Array; count: number };
+  /**
+   * Surface samples for the point-cloud map (tile coordinates, pushed off the
+   * surface). `aerial[i]` = 1 where only the drone can see the surface (tops
+   * above the quadruped's lidar, faces turned away from its path).
+   */
+  samples: { pos: Float32Array; aerial: Float32Array; count: number };
+  /** Ground the quadruped's lidar cannot see: behind a long obstacle, for tile x in [x0, x1] and z < zEdge. */
+  shadows: { x0: number; x1: number; zEdge: number }[];
   dispose(): void;
 };
 
@@ -53,6 +65,9 @@ function withFade<T extends THREE.MeshStandardMaterial>(mat: T, u: FieldUniforms
   mat.customProgramCacheKey = () => "field-fade";
   return mat;
 }
+
+/** Height above which an upward face is out of the quadruped lidar's sight (m). */
+const LIDAR_EYE = 0.44;
 
 function rng(seed: number) {
   let k = seed;
@@ -89,6 +104,7 @@ function sampleSurface(
   lift: number,
   rand: () => number,
   out: number[],
+  aerial: number[],
   minY = -0.02,
 ) {
   const src = geo.index ? geo.toNonIndexed() : geo;
@@ -139,6 +155,7 @@ function sampleSurface(
     const z = A.z + e1.z * u + e2.z * v + n.z * lift;
     if (y < minY) continue;
     out.push(x, y, z);
+    aerial.push((n.y > 0.55 && y > LIDAR_EYE) || n.z < -0.6 ? 1 : 0);
   }
   if (src !== geo) src.dispose();
 }
@@ -157,6 +174,8 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
   const footprints: THREE.Vector3[] = [];
   const geos: THREE.BufferGeometry[] = [];
   const pts: number[] = [];
+  const aerial: number[] = [];
+  const shadows: FieldObstacles["shadows"] = [];
   const rand = rng(4242);
 
   const mats = {
@@ -196,7 +215,7 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
     const s = new THREE.Vector3();
     geo.boundingBox!.getSize(s).multiply(tmpObj.scale);
     const area = 2 * (s.x * s.y + s.y * s.z + s.x * s.z);
-    sampleSurface(geo, m4, Math.round(area * density * sampleScale), 0.012, rand, pts);
+    sampleSurface(geo, m4, Math.round(area * density * sampleScale), 0.012, rand, pts, aerial);
     return mesh;
   };
 
@@ -245,6 +264,7 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
       part(a, post, mats.graphite, [px, base + 0.43, -0.08], [0, 0, 0], [0.07, 0.035, 0.36], 0.6);
     }
     for (let k = 0; k < 3; k++) footprints.push(new THREE.Vector3(x0 + 0.5 + k * 1.7, z - 0.08, 0.32));
+    shadows.push({ x0, x1: x0 + len, zEdge: z - 0.3 });
     geos.push(pipe, post);
   }
 
@@ -261,6 +281,7 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
     part(a, box, mats.crate, [-0.6, y + 0.15, 0.2], [0, 0.6, 0], [0.32, 0.3, 0.32]);
     footprints.push(new THREE.Vector3(x, z - 0.2, 0.62));
     footprints.push(new THREE.Vector3(x - 0.6, z + 0.2, 0.26));
+    shadows.push({ x0: x - 0.3, x1: x + 0.4, zEdge: z - 0.35 });
     geos.push(box);
   }
 
@@ -289,7 +310,8 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
     root,
     anchors,
     footprints: footprints.slice(0, MAX_FOOTPRINTS),
-    samples: { pos: new Float32Array(pts), count: pts.length / 3 },
+    samples: { pos: new Float32Array(pts), aerial: new Float32Array(aerial), count: pts.length / 3 },
+    shadows,
     dispose() {
       for (const g of new Set(geos)) g.dispose();
       Object.values(mats).forEach((m) => m.dispose());
@@ -297,13 +319,23 @@ export function buildObstacles(quality: FlankQuality, u: FieldUniforms): FieldOb
   };
 }
 
+function insideFootprint(x: number, z: number, footprints: THREE.Vector3[]) {
+  for (const f of footprints) {
+    const dx = wrapX(x - f.x);
+    const dz = z - f.y;
+    if (dx * dx + dz * dz < f.z * f.z * 0.55) return true;
+  }
+  return false;
+}
+
 /**
- * Ground samples for the map: a jittered raster over one tile (rows read as
- * scan lines), denser near the path, skipping the inside of obstacles.
+ * Ground samples of the quadruped's lidar: a jittered raster over one tile
+ * (rows read as scan lines along the path), thinning toward the edge of its
+ * range, skipping the inside of obstacles and the ground they hide from it.
  */
-export function sampleGround(quality: FlankQuality, footprints: THREE.Vector3[]) {
+export function sampleGround(quality: FlankQuality, footprints: THREE.Vector3[], shadows: FieldObstacles["shadows"]) {
   const high = quality === "high";
-  const step = high ? 0.06 : 0.1;
+  const step = high ? 0.07 : 0.11;
   const z0 = -5.2;
   const z1 = 3.4;
   const rand = rng(1337);
@@ -317,19 +349,53 @@ export function sampleGround(quality: FlankQuality, footprints: THREE.Vector3[])
       const z = z0 + (r + 0.5 + (rand() - 0.5) * 0.35) * step;
       const k = rand();
       const dz = Math.abs(z - pathZ(x));
-      // Thin the cloud far from the path (it fades out there anyway).
-      if (dz > 2.2 && rand() > 0.75) continue;
-      let inside = false;
-      for (const f of footprints) {
-        const dx = wrapX(x - f.x);
-        const dzz = z - f.y;
-        if (dx * dx + dzz * dzz < f.z * f.z * 0.55) {
-          inside = true;
-          break;
-        }
+      const thin = rand();
+      // Out of range for good, or lost to grazing incidence far from the path.
+      if (dz > LIDAR_RANGE + 0.05) continue;
+      if (thin < 0.6 * Math.min(1, Math.max(0, (dz - 1.1) / (LIDAR_RANGE - 1.1)))) continue;
+      if (insideFootprint(x, z, footprints)) continue;
+      // Lidar shadow behind long obstacles (tapered at their ends: seen diagonally from further along).
+      let hidden = false;
+      for (const sh of shadows) {
+        const depth = sh.zEdge - z;
+        if (depth > 0 && x > sh.x0 + depth * 0.7 && x < sh.x1 - depth * 0.7) hidden = true;
       }
-      if (inside) continue;
+      if (hidden) continue;
       pos.push(x, terrainHeight(x, z) + 0.018, z);
+      rnd.push(k);
+    }
+  }
+  return { pos: new Float32Array(pos), rnd: new Float32Array(rnd) };
+}
+
+/**
+ * Ground samples of the drone's scanner: cross-track scan lines (constant x,
+ * dense along z) over its whole swath, so the two sources cross-hatch where
+ * both have mapped and only the drone's lines reach past the lidar's range.
+ */
+export function sampleSwath(quality: FlankQuality, footprints: THREE.Vector3[]) {
+  const high = quality === "high";
+  const stepX = high ? 0.09 : 0.15;
+  const stepZ = high ? 0.045 : 0.085;
+  const z0 = -5.5;
+  const z1 = 3.5;
+  const rand = rng(977);
+  const cols = Math.round(FIELD_PERIOD / stepX);
+  const rows = Math.round((z1 - z0) / stepZ);
+  const pos: number[] = [];
+  const rnd: number[] = [];
+  for (let c = 0; c < cols; c++) {
+    const xl = (c + 0.5) * stepX;
+    for (let r = 0; r < rows; r++) {
+      const x = xl + (rand() - 0.5) * 0.012;
+      const z = z0 + (r + 0.5 + (rand() - 0.5) * 0.8) * stepZ;
+      const k = rand();
+      const y = terrainHeight(x, z);
+      // Never inside the swath (same test as the shader, with a soft edge).
+      const lead = SCAN_XR - SCAN_TAN * Math.max(y, 0);
+      if (Math.abs(z - droneZ(x - lead)) > SWATH * (0.86 + 0.14 * k)) continue;
+      if (insideFootprint(x, z, footprints)) continue;
+      pos.push(x, y + 0.024, z);
       rnd.push(k);
     }
   }

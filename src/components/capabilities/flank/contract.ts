@@ -1,12 +1,14 @@
 /**
- * Shared contract for the "research → field" flank animations in the
- * capabilities section. Three owners build against this file:
+ * Shared contract for the capability-row animations ("flank" scenes). Each
+ * capability row hosts one large scene beside its copy:
  *
- *   robot/**  + ResearchScene.tsx   the quadruped rig and the left (research / digital twin) scene
- *   field/**  + FieldScene.tsx      the right (field / SLAM) scene, consuming the same rig
- *   FlankStage.tsx + section layout the DOM slots, <Canvas> hosts, lazy mount, pausing, fallbacks
+ *   robot/**     + ResearchScene.tsx   the quadruped rig and its wireframe digital twin (robotics inset)
+ *   field/**     + FieldScene.tsx      the same rig in the field, building a lidar map (robotics)
+ *   pathology/** + PathologyScene.tsx  whole-slide scan and analysis (healthcare)
+ *   sonar/**     + SonarScene.tsx      seabed sonar detecting a diver (SONAR)
+ *   FlankStage.tsx                     the DOM frame, <Canvas> host, lazy mount, pausing, fallbacks
  *
- * Change this file only by agreement of the orchestrator; add, do not rename.
+ * Add to this file, do not rename: every scene is built against it.
  */
 import type * as THREE from "three";
 
@@ -45,3 +47,21 @@ export type Quadruped = {
 };
 
 export type CreateQuadruped = (opts: { style: QuadrupedStyle; quality: FlankQuality }) => Quadruped;
+
+/**
+ * Every scene the capability rows can host. "research" / "field" are the
+ * quadruped pair (robotics), "pathology" the whole-slide analysis scene
+ * (healthcare), "sonar" the underwater diver-detection scene.
+ */
+export type FlankKind = "research" | "field" | "pathology" | "sonar";
+
+/**
+ * Development aid: when `globalThis.__FLANK_T` is a number, a scene renders
+ * that absolute time (seconds) instead of advancing its own clock, so a
+ * specific moment of the loop can be screenshotted. Always `null` in production.
+ */
+export function flankForcedTime(): number | null {
+  if (process.env.NODE_ENV === "production") return null;
+  const t = (globalThis as { __FLANK_T?: unknown }).__FLANK_T;
+  return typeof t === "number" && Number.isFinite(t) ? t : null;
+}

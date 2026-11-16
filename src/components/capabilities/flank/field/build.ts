@@ -2,7 +2,8 @@ import * as THREE from "three";
 import type { FlankQuality } from "../contract";
 import { blobFrag, blobVert, cloudFrag, cloudVert, fanDotFrag, fanFrag, fanVert, groundFrag, groundVert, nodeFrag, nodeVert, trailFrag, trailVert } from "./shaders";
 import { LIDAR_RANGE, LIDAR_RINGS, pathSlope } from "./terrain";
-import { buildObstacles, makeFieldUniforms, MAX_FOOTPRINTS, sampleGround, type FieldUniforms } from "./world";
+import { buildDroneOverlay } from "./drone/overlay";
+import { buildObstacles, makeFieldUniforms, MAX_FOOTPRINTS, sampleGround, sampleSwath, type FieldUniforms } from "./world";
 
 const C = (hex: string) => new THREE.Color(hex);
 
@@ -59,7 +60,7 @@ function shader(u: FieldUniforms, vertexShader: string, fragmentShader: string, 
 export type FieldWorld = ReturnType<typeof buildFieldWorld>;
 
 /**
- * Everything in the field scene except the robot and the lights, built
+ * Everything in the field scene except the two robots and the lights, built
  * imperatively once per quality tier. Per frame the scene writes the shared
  * uniforms and calls `update`; nothing allocates after construction.
  */
@@ -90,9 +91,11 @@ export function buildFieldWorld(quality: FlankQuality) {
       uLit: { value: C("#2f3663") },
       uIce: { value: C("#cfdcea") },
       uIndigo: { value: C("#8d92c4") },
+      uAerial: { value: C("#a9adea") },
       uWine: { value: C("#7a2350") },
       uKey: { value: new THREE.Vector3(-0.35, 0.75, 0.55).normalize() },
       uLive: { value: 1 },
+      uShadow: { value: 0.5 },
     },
     { depthWrite: true },
   );
@@ -103,19 +106,29 @@ export function buildFieldWorld(quality: FlankQuality) {
   geos.push(groundGeo);
   mats.push(groundMat);
 
-  // --- Map cloud: ground raster + obstacle surfaces ----------------------
-  const gs = sampleGround(quality, obstacles.footprints);
+  // --- Map cloud, one draw call for both sources: the quadruped's ground
+  // raster, the drone's cross-track swath, and the obstacle surfaces split
+  // by which of the two can see them ------------------------------------
+  const gs = sampleGround(quality, obstacles.footprints, obstacles.shadows);
+  const ds = sampleSwath(quality, obstacles.footprints);
   const os = obstacles.samples;
   const nG = gs.rnd.length;
+  const nD = ds.rnd.length;
   const nO = os.count;
-  const cPos = new Float32Array((nG + nO) * 3);
+  const nAll = nG + nD + nO;
+  const cPos = new Float32Array(nAll * 3);
   cPos.set(gs.pos, 0);
-  cPos.set(os.pos, nG * 3);
-  const cRnd = new Float32Array(nG + nO);
-  const cKind = new Float32Array(nG + nO);
+  cPos.set(ds.pos, nG * 3);
+  cPos.set(os.pos, (nG + nD) * 3);
+  const cRnd = new Float32Array(nAll);
+  const cKind = new Float32Array(nAll);
+  const cSrc = new Float32Array(nAll);
   cRnd.set(gs.rnd, 0);
+  cRnd.set(ds.rnd, nG);
+  cSrc.fill(1, nG, nG + nD);
+  cSrc.set(os.aerial, nG + nD);
   let seed = 99;
-  for (let i = nG; i < nG + nO; i++) {
+  for (let i = nG + nD; i < nAll; i++) {
     seed = (seed * 16807) % 2147483647;
     cRnd[i] = seed / 2147483647;
     cKind[i] = 1;
@@ -124,12 +137,17 @@ export function buildFieldWorld(quality: FlankQuality) {
   cloudGeo.setAttribute("position", new THREE.BufferAttribute(cPos, 3));
   cloudGeo.setAttribute("aRnd", new THREE.BufferAttribute(cRnd, 1));
   cloudGeo.setAttribute("aKind", new THREE.BufferAttribute(cKind, 1));
+  cloudGeo.setAttribute("aSrc", new THREE.BufferAttribute(cSrc, 1));
   const cloudMat = shader(u, cloudVert, cloudFrag, {
     uSize: { value: high ? 2.2 : 2.5 },
-    uLow: { value: C("#5d63a0") },
-    uHigh: { value: C("#c2d0e2") },
+    uLow: { value: C("#7f96b6") },
+    uHigh: { value: C("#d3dfec") },
     uObj: { value: C("#cbd8e7") },
+    uAirLow: { value: C("#7a7ed6") },
+    uAirHigh: { value: C("#a6aaf0") },
+    uAirObj: { value: C("#b2b5f4") },
     uHot: { value: C("#f2f6fb") },
+    uAirHot: { value: C("#e4e6fb") },
     uWine: { value: C("#a3466f") },
     uOpacity: { value: 1 },
   });
@@ -283,6 +301,10 @@ export function buildFieldWorld(quality: FlankQuality) {
     mats.push(m);
   }
 
+  // --- Survey drone: scan plane, trajectory, keyframes, inter-robot links ---
+  const overlay = buildDroneOverlay(u, quality);
+  root.add(overlay.root);
+
   // --- Grounding under the robot: contact blob (+ shadow catcher on high) ---
   const under = new THREE.Group();
   root.add(under);
@@ -332,6 +354,7 @@ export function buildFieldWorld(quality: FlankQuality) {
       geos.forEach((g) => g.dispose());
       mats.forEach((m) => m.dispose());
       obstacles.dispose();
+      overlay.dispose();
     },
   };
 }

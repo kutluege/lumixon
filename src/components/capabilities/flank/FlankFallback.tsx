@@ -1,5 +1,7 @@
 import { useId } from "react";
-import type { FlankKind } from "./FlankCanvas";
+import type { FlankKind } from "./contract";
+import { PathologyFallback } from "./pathology/Fallback";
+import { SonarFallback } from "./sonar/Fallback";
 
 /*
  * Static line-work shown before the live scenes mount, without WebGL, or if a
@@ -125,7 +127,14 @@ function Quadruped({ solid }: { solid: boolean }) {
   );
 }
 
+/** Dispatches to the per-scene still; the quadruped pair is drawn in this file. */
 export function FlankFallback({ kind }: { kind: FlankKind }) {
+  if (kind === "pathology") return <PathologyFallback />;
+  if (kind === "sonar") return <SonarFallback />;
+  return <QuadrupedFallback kind={kind} />;
+}
+
+function QuadrupedFallback({ kind }: { kind: "research" | "field" }) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const fade = `${uid}-fade`;
   const mask = `${uid}-mask`;

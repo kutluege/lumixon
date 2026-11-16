@@ -1,6 +1,7 @@
 /* GLSL for the field (SLAM) scene. ShaderMaterial gets three's prefix, so
    colorspace_fragment is available. All share `fieldGlsl` (terrain, path,
    map-reveal model, beam) and its uniforms. */
+import { droneGlsl, ROTOR_ARM } from "./drone/flight";
 import { MAX_FOOTPRINTS } from "./world";
 import { fadeGlsl, fieldGlsl, LIDAR_RINGS } from "./terrain";
 
@@ -34,6 +35,7 @@ export const groundVert = /* glsl */ `
 
 export const groundFrag = /* glsl */ `
   ${fieldGlsl}
+  ${droneGlsl}
   ${fadeGlsl}
   #define MAXF ${MAX_FOOTPRINTS}
   #define CELL 0.25
@@ -42,9 +44,11 @@ export const groundFrag = /* glsl */ `
   uniform vec3 uLit;
   uniform vec3 uIce;
   uniform vec3 uIndigo;
+  uniform vec3 uAerial;
   uniform vec3 uWine;
   uniform vec3 uKey;
   uniform float uLive;
+  uniform float uShadow;
   varying vec3 vP;
   varying vec3 vN;
   varying float vXw;
@@ -89,10 +93,23 @@ export const groundFrag = /* glsl */ `
     }
     col *= ao;
 
-    // The map, where the lidar has already been: a faint occupancy grid near the
-    // path, occupied cells in burgundy.
-    float age = revealAge(vP.x, vXw, vP.z);
-    float mapped = smoothstep(0.0, 0.5, age);
+    // Soft shadow of the drone: four rotor discs and the airframe, wide
+    // penumbra from its altitude, nudged along the key light.
+    {
+      vec2 q = vP.xz - (uDroneC.xz + vec2(0.16, -0.3));
+      float cy = cos(uDroneC.w);
+      float sy = sin(uDroneC.w);
+      q = vec2(cy * q.x - sy * q.y, sy * q.x + cy * q.y);
+      vec2 a = abs(q) - vec2(${ROTOR_ARM.toFixed(3)});
+      float sh = exp(-dot(a, a) / 0.036) * 0.85 + exp(-dot(q, q) / 0.03) * 0.75;
+      col *= 1.0 - uShadow * clamp(sh, 0.0, 1.0);
+    }
+
+    // The map, where either sensor has already been: a faint occupancy grid
+    // near the path, occupied cells in burgundy.
+    float ageD = droneAge(vP.x, vXw, vP.y, vP.z);
+    float mappedD = smoothstep(0.0, 0.5, ageD);
+    float mapped = max(smoothstep(0.0, 0.5, revealAge(vP.x, vXw, vP.z)), mappedD);
     vec2 gw = abs(fract(wp / CELL - 0.5) - 0.5) / fwidth(wp / CELL);
     float line = 1.0 - min(min(gw.x, gw.y), 1.0);
     float near = 1.0 - smoothstep(0.35, 1.0, abs(vP.z - fPath(vXw)));
@@ -115,6 +132,22 @@ export const groundFrag = /* glsl */ `
     }
     col += uIce * (rings * 0.55 * head * head + wedge * 0.045) * inR * uLive;
 
+    // Live drone scan: the line where its scan plane meets the terrain (crisp
+    // core, soft halo, a short afterglow behind it) and the sweeping spot.
+    float lead = SCAN_XR - SCAN_TAN * max(vP.y, 0.0);
+    float dxl = vP.x - lead;
+    float lat = abs(vP.z - uDroneC.z) / SWATH;
+    float inSw = 1.0 - smoothstep(0.72, 1.0, lat);
+    float lw = max(0.008, fwidth(vP.x) * 1.1);
+    float core = exp(-dxl * dxl / (lw * lw));
+    float halo = exp(-dxl * dxl / 0.006);
+    float after = smoothstep(-0.7, 0.0, dxl) * step(dxl, 0.0);
+    vec2 sp = vec2(dxl, vP.z - uSpotZ);
+    float spot = exp(-dot(sp, sp) / 0.012) + 0.35 * exp(-dot(sp, sp) / 0.09);
+    col += (uAerial * (core * 0.6 + halo * 0.16 + after * after * 0.07) * inSw + uIce * spot * 0.55) * uLive;
+    // Ground only the drone has surveyed reads a shade more violet.
+    col += uAerial * mappedD * 0.034;
+
     gl_FragColor = vec4(col, fieldFade(vP));
     #include <colorspace_fragment>
   }
@@ -124,30 +157,42 @@ export const groundFrag = /* glsl */ `
 
 export const cloudVert = /* glsl */ `
   ${fieldGlsl}
+  ${droneGlsl}
   attribute float aRnd;
   attribute float aKind;
+  attribute float aSrc;
   uniform float uSize;
   varying float vFlash;
   varying float vLive;
   varying float vKind;
+  varying float vSrc;
   varying float vRnd;
   varying vec3 vP;
 
   void main() {
     float xr = wrapX(position.x - uS);
     vec3 p = vec3(xr, position.y, position.z);
-    float age = revealAge(xr, position.x, position.z);
+    // Two sources, one map: each point belongs to the sensor that can see it.
+    bool aerial = aSrc > 0.5;
+    float age = aerial ? droneAge(xr, position.x, position.y, position.z) : revealAge(xr, position.x, position.z);
     if (age < 0.0) {
       // Not mapped yet: off-screen, no fragments.
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       gl_PointSize = 0.0;
       return;
     }
-    vec2 rel = p.xz - uSensor.xz;
-    float inR = 1.0 - smoothstep(LIDAR_R * 0.8, LIDAR_R, length(rel));
-    vLive = exp(-beamAge(rel) * 3.0) * inR;
-    vFlash = exp(-age * 1.5);
+    if (aerial) {
+      float dz = (p.z - uSpotZ) / 0.32;
+      vLive = exp(-dz * dz) * exp(-age * 1.6);
+      vFlash = exp(-age * 1.9);
+    } else {
+      vec2 rel = p.xz - uSensor.xz;
+      float inR = 1.0 - smoothstep(LIDAR_R * 0.8, LIDAR_R, length(rel));
+      vLive = exp(-beamAge(rel) * 3.0) * inR;
+      vFlash = exp(-age * 1.5);
+    }
     vKind = aKind;
+    vSrc = aSrc;
     vRnd = aRnd;
     vP = p;
     vec4 mv = viewMatrix * vec4(p, 1.0);
@@ -166,12 +211,17 @@ export const cloudFrag = /* glsl */ `
   uniform vec3 uLow;
   uniform vec3 uHigh;
   uniform vec3 uObj;
+  uniform vec3 uAirLow;
+  uniform vec3 uAirHigh;
+  uniform vec3 uAirObj;
   uniform vec3 uHot;
+  uniform vec3 uAirHot;
   uniform vec3 uWine;
   uniform float uOpacity;
   varying float vFlash;
   varying float vLive;
   varying float vKind;
+  varying float vSrc;
   varying float vRnd;
   varying vec3 vP;
 
@@ -181,16 +231,19 @@ export const cloudFrag = /* glsl */ `
     if (r2 > 0.25) discard;
     float soft = 1.0 - smoothstep(0.08, 0.25, r2);
 
-    // Ground: indigo in the hollows to ice on the rises. Obstacles: ice.
-    vec3 col = mix(uLow, uHigh, smoothstep(-0.22, 0.5, vP.y));
-    col = mix(col, uObj, vKind);
+    // Quadruped lidar: ice family, darker in the hollows. Drone scanner:
+    // indigo family, so the two contributions stay tellable inside one cloud.
+    float hgt = smoothstep(-0.22, 0.5, vP.y);
+    vec3 col = mix(mix(uLow, uHigh, hgt), mix(uAirLow, uAirHigh, hgt), vSrc);
+    col = mix(col, mix(uObj, uAirObj, vSrc), vKind);
     float a = mix(0.42 + 0.2 * vRnd, 0.7 + 0.2 * vRnd, vKind);
+    vec3 hot = mix(uHot, uAirHot, vSrc);
 
-    // Obstacle returns flash burgundy on first contact, then cool to ice.
-    vec3 flashCol = mix(uHot, uWine * 1.6, vKind * smoothstep(0.85, 0.35, vFlash) * 0.8);
+    // Obstacle returns flash burgundy on first contact, then cool down.
+    vec3 flashCol = mix(hot, uWine * 1.6, vKind * smoothstep(0.85, 0.35, vFlash) * 0.8);
     col = mix(col, flashCol, clamp(vFlash * 1.2, 0.0, 1.0));
     a += vFlash * 0.6;
-    col = mix(col, uHot, vLive * 0.7);
+    col = mix(col, hot, vLive * 0.7);
     a += vLive * 0.35;
 
     gl_FragColor = vec4(col, clamp(a, 0.0, 1.0) * soft * uOpacity * fieldFade(vP));

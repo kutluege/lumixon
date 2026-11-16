@@ -1,44 +1,34 @@
-import { plural } from "../format";
 import type { Dictionary } from "../types";
 
 /**
  * Simplified Chinese (zh-CN), translated from the Turkish source (tr.ts).
- * English-only fields in the source (category/item subtitles, pillar tags,
+ * English-only fields in the source (item subtitles, pillar tags,
  * ogEyebrow) stay in English by design.
  */
 export const zh: Dictionary = {
   meta: {
     title: "LUMIXON | 应用人工智能与深科技",
     description:
-      "LUMIXON 是一家应用人工智能与深科技公司，在机器人、自主系统、工业人工智能、遥感、企业智能和生成式视觉计算领域，将复杂的现实世界问题转化为工程化解决方案。",
+      "LUMIXON 是一家应用人工智能与深科技公司，在机器人与自主系统、医疗数字病理和水下声呐（SONAR）探测领域，将复杂的现实世界问题转化为工程化解决方案。",
     keywords: [
       "应用人工智能",
       "深科技",
       "机器人人工智能",
       "自主系统",
-      "预测性维护",
-      "传感器融合",
-      "遥感",
-      "数字孪生",
-      "文档智能",
-      "智能体 AI",
+      "SLAM",
+      "医疗人工智能",
+      "数字病理",
+      "声呐",
+      "蛙人探测",
+      "水下异常检测",
       "LUMIXON",
     ],
     ogEyebrow: "APPLIED AI & DEEP TECHNOLOGY",
     ogTagline: "面向复杂现实问题、以工程为导向的人工智能。",
     knowsAbout: [
       "面向机器人与自主系统的人工智能",
-      "预测性维护",
-      "信号处理与传感器融合",
-      "地理空间人工智能与遥感",
-      "数字孪生与仿真",
-      "时间序列预测与异常检测",
-      "物流与供应链人工智能",
-      "SLAM：同步定位与地图构建",
-      "文档智能",
-      "智能体 AI（Agentic AI）",
-      "人工智能视频生成",
-      "三维渲染、CGI 与动画",
+      "医疗人工智能：数字病理",
+      "SONAR：水下探测与异常识别",
     ],
   },
 
@@ -69,7 +59,7 @@ export const zh: Dictionary = {
     eyebrowB: "深科技",
     headlineA: "将复杂的现实世界问题",
     headlineB: "转化为智能工程解决方案。",
-    lede: "在机器人、自主系统、遥感和工业人工智能领域，我们设计、开发并部署贯通感知到决策的系统，使其能够在现场实际运行。",
+    lede: "在机器人与自主系统、数字病理和水下声学领域，我们设计、开发并部署贯通感知到决策的系统，使其能够在现场实际运行。",
     ctaPrimary: "探讨您的技术挑战",
     ctaSecondary: "了解我们的能力",
     scroll: "向下滚动",
@@ -93,39 +83,11 @@ export const zh: Dictionary = {
   capabilities: {
     label: "核心能力",
     title: "在现场落地运行的人工智能。",
-    lede: "我们将十二个专业领域归入三大方向：物理系统、企业知识与视觉内容制作。在每个项目中，我们统筹设计数据、模型及其运行环境，构建真正在生产环境中运行、而非止步于原型阶段的系统。",
-    tablistAria: "能力领域",
-    fieldCount: plural({ other: "{n} 个领域" }),
-    inspect: "查看",
-    close: "关闭",
-    applicationCount: plural({ other: "{n} 项应用" }),
-    methodsAria: "方法与技术",
+    lede: "我们深耕三个领域：机器人与自主系统、医疗数字病理和水下声呐（SONAR）探测。在每个项目中，我们统筹设计数据、模型及其运行环境，构建真正在生产环境中运行、而非止步于原型阶段的系统。",
     systemsHeading: "我们构建的系统",
+    methodsAria: "方法与技术",
     photoCredit: "图片：",
-    flank: {
-      research: { label: "研究", detail: "数字孪生 · 仿真 · 策略训练" },
-      field: { label: "现场", detail: "SLAM · LiDAR · 传感器融合" },
-      bridge: "从仿真到现场",
-      alt: "同一台四足机器人的两个阶段。研究：它的线框数字孪生在仿真网格上行走，训练轨迹随之描绘。现场：真实的机器人在崎岖地面上行走，LiDAR 扫描逐步构建点云地图。",
-    },
-  },
-
-  categories: {
-    fiziksel: {
-      title: "物理与工业 AI",
-      shortTitle: "物理与工业",
-      subtitle: "Physical & Industrial AI",
-    },
-    kurumsal: {
-      title: "企业智能",
-      shortTitle: "企业智能",
-      subtitle: "Enterprise Intelligence",
-    },
-    "uretken-medya": {
-      title: "生成式媒体与视觉创作",
-      shortTitle: "生成式媒体",
-      subtitle: "Generative Media & Visual Creation",
-    },
+    twinInset: "数字孪生 · 仿真",
   },
 
   items: {
@@ -133,262 +95,59 @@ export const zh: Dictionary = {
       title: "机器人与自主系统 AI",
       subtitle: "AI for Robotics & Autonomous Systems",
       summary:
-        "我们将感知、定位、规划与控制各层整合为统一的自主系统软件栈。从移动机器人、机械臂到无人载具，我们开发能够在不确定、多变环境中安全决策的系统。我们将经仿真验证的行为分步骤、受控地迁移至真实硬件。",
+        "我们将感知、定位、规划与控制各层整合为统一的自主系统软件栈。从四足机器人到无人机，从机械臂到无人地面车辆，我们开发能够在不确定、多变环境中安全决策的系统。借助无人机与地面机器人协同构建同一张地图的多机器人 SLAM，我们在 GPS 信号无法覆盖的区域同样实现定位与建图。我们将经仿真验证的行为分步骤、受控地迁移至真实硬件。",
       applications: [
         "基于 LiDAR 与相机数据实现同步定位与建图的自主导航软件",
+        "将无人机空中扫描与地面机器人地面扫描的数据融合到同一张地图中的多机器人 SLAM 系统",
         "依托视觉目标识别的抓取放置与装配机械臂",
         "面向仓库、厂区及作业现场、具备避障能力的路径与运动规划模块",
         "在仿真中训练并迁移至真实硬件的强化学习控制策略",
       ],
-      methods: ["SLAM", "ROS 2", "逆运动学", "模型预测控制（MPC）", "Sim-to-Real"],
-      visualLabel: "运动链 · 逆运动学",
+      methods: ["SLAM", "多机器人 SLAM", "ROS 2", "逆运动学", "模型预测控制（MPC）", "Sim-to-Real"],
       imageAlt: "生产线自动化工位上，一台蓝色工业机械臂正在搬运成型零件",
-    },
-    "kestirimci-bakim": {
-      title: "预测性维护与工业 AI",
-      subtitle: "Predictive Maintenance & Industrial AI",
-      summary:
-        "我们基于振动、电流、温度和工艺数据，持续推断设备的健康状态。能够在故障发生前发出预警的模型，有助于避免非计划停机，使维护依据设备实际状态而非固定周期来安排。我们构建的系统可与现有 SCADA 和 MES 基础设施集成运行。",
-      applications: [
-        "基于振动与电流数据发出故障前预警的状态监测系统",
-        "针对轴承、齿轮及电机故障的频域故障分类",
-        "逐台设备的剩余使用寿命预测与维护优先级排序",
-        "生产线上基于机器视觉的质量检测与表面缺陷检测",
-      ],
-      methods: ["FFT 与包络分析", "剩余使用寿命（RUL）", "OPC UA · MQTT", "边缘推理"],
-      visualLabel: "振动频谱 · 轴承故障频率",
-      imageAlt: "工厂内的不锈钢管道、阀门及电机驱动泵",
-    },
-    "sinyal-sensor-fuzyonu": {
-      title: "信号处理与传感器融合",
-      subtitle: "Signal Processing & Sensor Fusion",
-      summary:
-        "单一传感器无法观测到的信息，我们通过多传感器联合估计使其可见。我们借助时间同步与不确定性建模，融合 IMU、GNSS、雷达、LiDAR、声学和相机数据，生成对噪声及传感器失效具有鲁棒性的统一状态估计。",
-      applications: [
-        "融合 IMU、GNSS 与里程计数据的高精度位置与姿态估计",
-        "基于雷达与相机融合的目标检测与多目标跟踪",
-        "声学与振动信号的降噪与事件检测",
-        "面向嵌入式处理器和 FPGA 的实时信号处理流水线",
-      ],
-      methods: ["卡尔曼滤波（EKF/UKF）", "粒子滤波", "小波变换", "PTP 时间同步"],
-      visualLabel: "多传感器 → 统一状态估计",
-      imageAlt: "安装在自动驾驶车辆车顶、处于旋转状态的 64 线 LIDAR 传感器",
-    },
-    "cografi-uzaktan-algilama": {
-      title: "地理空间 AI 与遥感",
-      subtitle: "Geospatial AI & Remote Sensing",
-      summary:
-        "我们将卫星、航空及无人机影像转化为可量测的空间信息。借助适用于光学、多光谱和 SAR 数据的模型，我们检测变化、对目标进行分类，并以人工判读难以企及的频率监测大范围区域。",
-      applications: [
-        "在卫星与无人机影像中检测并分类建筑、车辆及基础设施目标",
-        "基于多时相影像序列的变化检测与区域监测",
-        "利用多光谱数据开展植被健康与土地利用分析",
-        "不受云层覆盖和昼夜条件影响的 SAR 监测流水线",
-      ],
-      methods: ["SAR / 多光谱影像", "语义分割", "变化检测", "GeoTIFF · STAC"],
-      visualLabel: "等高线 · 瓦片网格 · 检测",
-      imageAlt: "澳大利亚西北海岸的卫星影像：浅绿松石色水域、岛屿与深蓝色海洋",
-    },
-    "dijital-ikiz": {
-      title: "数字孪生与仿真 AI",
-      subtitle: "Digital Twin & Simulation AI",
-      summary:
-        "我们为物理资产和流程构建由实时数据驱动的虚拟映射。通过将基于物理的模型与从数据中学习的代理模型相结合，可在不干预现场的情况下测试各类场景，并以近实时方式优化设备与流程。",
-      applications: [
-        "与传感器数据同步运行的工厂、产线及设备数字孪生",
-        "加速高成本 CFD 与 FEM 分析的代理模型",
-        "面向产能、布局与排程决策的场景仿真",
-        "用于训练机器人与感知模型、具备物理一致性的合成数据",
-      ],
-      methods: ["物理信息神经网络（PINN）", "代理建模", "离散事件仿真", "OpenUSD"],
-      visualLabel: "物理资产 ↔ 数字孪生",
-      imageAlt: "黄昏时分灯火通明的炼油塔、管道和储罐",
-    },
-    "zaman-serisi-anomali": {
-      title: "时间序列预测与异常检测",
-      subtitle: "Time-Series Forecasting & Anomaly Detection",
-      summary:
-        "对于需求、能耗、产量和传感器读数等时间相关数据，我们在预测未来走势的同时给出其不确定性区间。异常检测模型能够及早捕捉偏离预期行为的情况，为运营团队提供可解释、按优先级排序的告警。",
-      applications: [
-        "输出需求、负荷与消耗预测并附带置信区间的模型",
-        "多变量传感器数据流的实时异常检测",
-        "识别运营与金融交易数据中的异常模式",
-        "对季节性、节假日效应及外生变量进行建模的计划基础设施",
-      ],
-      methods: ["概率预测", "Temporal Fusion Transformer", "基于自编码器的异常检测", "变点检测"],
-      visualLabel: "预测区间 · 异常标记",
-      imageAlt: "深色屏幕上随时间衰减的白色音频波形及信号处理参数",
-    },
-    "lojistik-tedarik": {
-      title: "物流与供应链 AI",
-      subtitle: "AI for Logistics & Supply Chain",
-      summary:
-        "我们不把需求预测、库存策略和路径规划视为彼此割裂的决策，而是将其作为一个整体优化问题来处理。通过将机器学习与数学优化相结合，我们构建能够真实刻画约束条件、并快速适应条件变化的计划系统。",
-      applications: [
-        "带时间窗与容量约束的车辆路径优化",
-        "基于仓库及区域级需求预测的库存优化",
-        "及早识别供应网络中的延误与中断风险",
-        "仓内拣选、储位布局与人力规划模型",
-      ],
-      methods: ["车辆路径问题（VRP）", "混合整数规划", "图神经网络", "随机优化"],
-      visualLabel: "路径网络 · 中断后重新规划",
-      imageAlt: "傍晚时分繁忙的集装箱港口，堆叠的集装箱与岸边起重机",
-    },
-    "slam-haritalama": {
-      title: "SLAM：同步定位与地图构建",
-      subtitle: "SLAM — Simultaneous Localization and Mapping",
-      summary:
-        "在矿山、隧道、仓库、封闭厂房及灾区等 GPS 信号无法覆盖的环境中，我们使无人机、无人地面车辆和手持式扫描仪在构建周围环境三维地图的同时估计自身位置。我们以紧耦合方式融合 LiDAR、相机与 IMU 数据，并通过回环闭合与位姿图优化校正累积漂移，生成一致、可量测的地图。输出成果可直接用于数字孪生、巡检和自主导航。",
-      applications: [
-        "在隧道、矿山及封闭厂房中无需 GPS 即可自主飞行与建图的无人机系统",
-        "在仓库与工厂内持续估计自身位置的无人地面车辆与移动机器人",
-        "从步行扫描区域生成点云与三维模型的手持式扫描仪软件",
-        "基于扫描数据生成数字孪生、平面图及结构检测报告的处理流水线",
-      ],
-      methods: [
-        "LiDAR 惯性里程计",
-        "视觉 SLAM（ORB-SLAM）",
-        "回环闭合",
-        "位姿图优化",
-        "点云配准（ICP/NDT）",
-        "ROS 2",
-      ],
-      visualLabel: "LiDAR 扫描 · 位姿图 · 回环闭合",
-      imageAlt:
-        "蓝天背景下仰视的工业级四旋翼无人机，机身顶部搭载圆柱形传感器，底部挂载变焦与热成像相机模组",
-    },
-    "dokuman-zekasi": {
-      title: "文档智能与企业级 AI",
-      subtitle: "Document Intelligence & Enterprise AI",
-      summary:
-        "我们将合同、发票、技术规格书和往来函件等非结构化文档转化为可验证的结构化数据。基于企业知识库构建的搜索与问答系统将每条回答关联至来源文档，使其可审计。",
-      applications: [
-        "从扫描件和电子文档中提取字段、表格与签名的处理流水线",
-        "提供来源引用、遵循权限级别的企业搜索与问答系统",
-        "合同与规格书的条款比对、风险与合规审查",
-        "本地部署或私有云托管、确保数据不出域的语言模型方案",
-      ],
-      methods: ["RAG", "OCR 与版面分析", "混合向量检索", "LoRA 微调"],
-      visualLabel: "版面分析 · 字段提取",
-      imageAlt:
-        "昏暗光线下桌上一台打开的笔记本电脑，周围散放着技术图纸、卡尺和铅笔，图纸上放着一副眼镜框",
-    },
-    "ajan-otomasyon": {
-      title: "智能体 AI 与智能自动化",
-      subtitle: "Agentic AI & Intelligent Automation",
-      summary:
-        "我们让语言模型不再只是生成文本，而是成为能够调用工具、制定计划并执行多步骤任务的智能体。智能体以明确界定的权限接入企业系统；关键步骤的人工审批、每项操作的日志记录及可回滚能力，都是设计的组成部分。",
-      applications: [
-        "与 ERP、CRM 及工单系统集成运行的多步骤流程智能体",
-        "对来件请求进行分类、分派并起草回复的运营助手",
-        "从多个来源收集并分析数据、撰写报告的研究智能体",
-        "通过人工审批节点、操作日志和评测集进行管控的自动化流程",
-      ],
-      methods: ["LLM 智能体", "工具调用", "Model Context Protocol（MCP）", "评测（eval）流水线"],
-      visualLabel: "规划 → 工具调用 → 校验",
-      imageAlt: "昏暗数据中心内布满网络线缆的服务器机柜",
-    },
-    "video-uretimi": {
-      title: "AI 视频生成与商业制作",
-      subtitle: "AI Video Generation & Commercial Production",
-      summary:
-        "面向广告、产品宣传和企业传播，我们将生成式视频模型与专业后期制作规范相结合。从脚本、分镜到调色与交付，每个环节均可控；角色、产品与品牌形象逐帧保持一致。",
-      applications: [
-        "借助生成式模型制作的产品发布与营销活动广告片",
-        "从分镜到动态分镜的快速预演与概念开发",
-        "通过多语种配音与口型同步实现内容本地化",
-        "针对品牌专属风格与角色一致性进行微调的图像模型",
-      ],
-      methods: ["扩散模型", "ControlNet 条件控制", "LoRA 风格训练", "ACES 色彩管理"],
-      visualLabel: "帧序列 · 关键帧",
-      imageAlt: "大型影棚布景中，摄制组在灯光架、摄影摇臂和监视器之间工作",
-    },
-    "3d-cgi-animasyon": {
-      title: "三维渲染、CGI 与动画制作",
-      subtitle: "3D Rendering, CGI & Animation Production",
-      summary:
-        "从产品可视化到技术动画，我们制作照片级真实感的三维内容。我们将传统建模和基于物理的渲染流程与 NeRF、高斯泼溅（Gaussian Splatting）等神经重建方法相结合，以高保真度将真实物体与空间带入数字环境。",
-      applications: [
-        "为尚未量产的产品制作照片级渲染图与 360° 交互式视觉内容",
-        "讲解机器、工艺与系统运行原理的技术与工业动画",
-        "基于照片与视频对真实空间和物体进行三维重建",
-        "针对 Web 与实时引擎优化的三维资产制作",
-      ],
-      methods: ["基于物理的渲染（PBR）", "NeRF / 高斯泼溅", "摄影测量", "glTF · OpenUSD"],
-      visualLabel: "线框 → 着色表面",
-      imageAlt: "背面视角：一名设计师在双显示器工作站上使用三维建模软件",
-    },
-  },
-
-  visuals: {
-    spectrum: { threshold: "报警阈值", signal: "加速度 · 时间", warning: "预警", maxFreq: "2 kHz" },
-    fusion: {
-      lanes: ["IMU · 200 Hz", "GNSS · 10 Hz", "ODOM · 50 Hz"],
-      filterSub: "预测 · 更新",
-      output: "x̂ · 状态估计",
-    },
-    geospatial: { building: "建筑", vehicle: "车辆", change: "变化", north: "N", east: "E", scale: "500 m" },
-    twin: { physical: "物理资产", twin: "数字孪生", sync: "同步", rpmUnit: "r/min" },
-    forecast: { history: "历史", forecast: "预测 · P10–P90", anomaly: "异常" },
-    network: { disruption: "中断", depot: "仓库", caption: "带时间窗的 VRP" },
-    document: {
-      header: "{ 输出 · json",
-      fields: ["doc_no", "date", "parties", "amount", "signature"],
-      page: "第 1 页",
-    },
-    agentic: {
-      task: "任务 ›",
-      taskName: "供应风险报告",
-      step: "步骤 {n}/{total}",
-      columns: ["编排器", "工具 · MCP", "护栏"],
-      planner: "规划器",
-      validation: "校验",
-      checks: ["策略", "schema"],
-      human: "人工审批",
-      humanApproved: "已批准 ✓",
-      humanPending: "等待中…",
-      humanIdle: "待命",
-      output: "输出",
-      reportFile: "report.pdf",
-      audit: "审计日志 ✓",
-      retryNote: "↺ 重试 · 最多 3 次",
-      toolDoc: "文档",
-      toolMail: "邮件",
-      metrics: ["耗时", "token", "工具", "尝试"],
-      status: {
-        planning: "规划中",
-        toolCall: "工具调用",
-        result: "结果",
-        failed: "失败",
-        retry: "重试",
-        passed: "通过",
-        awaiting: "待审批",
-        done: "已完成",
-        idle: "待命",
+      scene: {
+        label: "无人机与地面机器人",
+        detail: "多机器人 SLAM · LiDAR · 传感器融合",
+        alt: "一台四足机器人在崎岖地面上行走，一架无人机在其上方飞行；两者的 LiDAR 扫描共同构建周围环境的点云地图。角落的小窗口中，同一台机器人的线框数字孪生在仿真网格上行走。",
       },
-      log: [
-        "› 规划：3 步 · rag → sql → 校验",
-        "› 调用：rag.search(k=8) · sql.query",
-        "› 结果：rag ✓ 96ms · sql ✓ 182ms",
-        "› 校验：schema ✕ 缺失：supplier_id",
-        "› 重试 2/3 · 计划已修订",
-        "› 调用：api.get(/stock) · doc.parse",
-        "› 结果：api ✓ 240ms · doc ✓ 131ms",
-        "› 校验：通过 · 策略 ✓ schema ✓",
-        "› 人工审批：请求已发送",
-        "› 已批准 · report.pdf 已发布",
-        "› 任务已关闭 · 下一项排队中",
-      ],
     },
-    timeline: { scene: "场景", tracks: ["V1", "镜头", "KF", "曲线"], caption: "24 fps · ACES" },
-    mesh: { wireframe: "线框", stats: "80 个面 · 42 个顶点" },
-    slam: {
-      heading: "位姿估计 · LIDAR-IMU",
-      keyframe: "KF",
-      points: "点数",
-      drift: "漂移",
-      unit: "m",
-      status: ["扫描中 · 地图扩展", "回环候选 · ICP 匹配", "位姿图优化", "回环已闭合 ✓"],
+    "saglik-dijital-patoloji": {
+      title: "医疗 AI：数字病理",
+      subtitle: "AI in Healthcare — Digital Pathology",
+      summary:
+        "我们开发在十亿像素尺度上处理全切片图像的模型。我们分割组织区域，检测并分类细胞，并将可疑区域按优先级呈现给病理医生。这些系统的设计目的不是作出诊断，而是为病理医生的决策提供支持，并确保每一项输出都可在图像上核验。",
+      applications: [
+        "在全切片图像中划分肿瘤与组织区域的分割模型",
+        "实现细胞核检测、细胞分类与核分裂象计数的定量分析工具",
+        "对免疫组化染色中的生物标志物评分进行标准化的软件",
+        "以热力图标记可疑区域并对病例进行优先级排序的决策支持流程",
+      ],
+      methods: ["全切片成像（WSI）", "多示例学习（MIL）", "染色归一化", "视觉 Transformer（ViT）", "DICOM · OpenSlide"],
+      imageAlt: "染成粉色和紫色的组织切片显微图像，单个细胞核清晰可见",
+      scene: {
+        label: "全切片分析",
+        detail: "分割 · 细胞检测 · 热力图",
+        alt: "扫描头在组织切片玻片上移动；细胞核被检测并标记，可疑区域以热力图突出显示。",
+      },
+    },
+    sonar: {
+      title: "SONAR：水下探测与异常识别",
+      subtitle: "SONAR — Underwater Detection & Anomaly Recognition",
+      summary:
+        "我们将主动与被动声呐数据转化为使水下运动可见的感知系统。我们从混响、多径和环境噪声中分辨出潜水员、无人潜航器和异常物体，将检测结果关联成航迹并加以分类。我们构建实时运行的处理流水线，用于对港口、沿岸设施和水下基础设施进行不间断监测。",
+      applications: [
+        "面向港口与沿岸设施的蛙人探测与跟踪系统",
+        "侧扫声呐与多波束声呐图像中的目标与异常检测",
+        "被动声学数据中船舶、航行器与海洋生物声学特征的分类",
+        "管道、线缆及海底结构的变化与损伤监测",
+      ],
+      methods: ["波束形成", "匹配滤波", "CFAR 检测", "基于声谱图的深度学习", "多目标跟踪"],
+      imageAlt: "从下方仰视蓝色海水中的水肺潜水员剪影，右侧是深色礁石和上升的气泡",
+      scene: {
+        label: "蛙人探测",
+        detail: "主动声呐 · 异常检测 · 航迹跟踪",
+        alt: "海底的声呐头扫描水体；一名靠近的潜水员以回波形式被捕获，被标记为异常并纳入航迹跟踪。",
+      },
     },
   },
 

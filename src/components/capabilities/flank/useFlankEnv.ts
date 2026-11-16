@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type RefObject } from "react";
 import { useReducedMotion } from "framer-motion";
 import type { FlankQuality } from "./contract";
 
@@ -24,8 +24,8 @@ type IdleWindow = Window & {
 };
 
 /**
- * Decides whether (and at which quality) the flank scenes may mount:
- * only once the band is within ~one viewport of the screen, then on the next
+ * Decides whether (and at which quality) the scenes of one stage may mount:
+ * only once that stage is within ~one viewport of the screen, then on the next
  * idle slot, and never without WebGL. `null` means "keep the static fallback".
  * Quality follows the hero's rule: small screens or ≤4 cores render "low".
  */
@@ -93,6 +93,23 @@ export function useOnScreen(ref: RefObject<HTMLElement | null>): boolean {
   }, [ref]);
 
   return inView && pageVisible;
+}
+
+/** A media query that is `false` during SSR and hydration, then follows the viewport. */
+export function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 }
 
 /**

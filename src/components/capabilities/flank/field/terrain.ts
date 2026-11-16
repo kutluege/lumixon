@@ -10,16 +10,22 @@
  */
 
 export const FIELD_PERIOD = 18;
-const K = (2 * Math.PI) / FIELD_PERIOD;
+/** Angular wavenumber of one tile: every periodic term is an integer multiple of it. */
+export const FIELD_K = (2 * Math.PI) / FIELD_PERIOD;
+const K = FIELD_K;
 
 /** Walking speed (m/s). */
 export const WALK_SPEED = 0.42;
-/** Lidar range (m): the map is revealed inside this radius. */
-export const LIDAR_RANGE = 3.3;
+/**
+ * Range (m) of the quadruped's lidar: its part of the map is revealed inside
+ * this radius. A ground-level sensor has a short horizon; the survey drone's
+ * swath (see drone/flight.ts) reaches past it on both sides.
+ */
+export const LIDAR_RANGE = 2.8;
 /** Lidar sweep rate (rad/s): one revolution every ~2.2 s. */
 export const SWEEP_RATE = (2 * Math.PI) / 2.2;
 /** Ground-hit distances of the lidar channels (m), drawn as rings on the ground. */
-export const LIDAR_RINGS = [0.72, 1.02, 1.4, 1.86, 2.42, 3.1] as const;
+export const LIDAR_RINGS = [0.62, 0.88, 1.2, 1.6, 2.08, 2.64] as const;
 /** Half-width of the flat walking corridor around the path (m). */
 export const CORRIDOR = 0.75;
 

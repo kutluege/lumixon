@@ -1,14 +1,13 @@
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SECTION_IDS } from "@/lib/site";
 import type { Dictionary } from "@/i18n/types";
-import { CapabilityExplorer } from "./CapabilityExplorer";
-import { FlankStage } from "./flank/FlankStage";
+import { CapabilityRows } from "./CapabilityRows";
 
 /**
  * 02 · Yetenekler
- * Server shell: section frame + header. Two client islands follow: the
- * "research → field" band (lazy WebGL panels) and the interactive explorer
- * (tabs, cards, procedural visuals).
+ * Server shell: section frame + header. One client island follows: the three
+ * capability rows (copy at the start edge, a lazy WebGL scene at the end edge).
+ * No ancestor here may set `overflow`: the scenes are sticky from lg up.
  */
 export function Capabilities({ t }: { t: Dictionary }) {
   return (
@@ -41,8 +40,7 @@ export function Capabilities({ t }: { t: Dictionary }) {
           title={t.capabilities.title}
           lede={t.capabilities.lede}
         />
-        <FlankStage />
-        <CapabilityExplorer />
+        <CapabilityRows />
       </div>
     </section>
   );
