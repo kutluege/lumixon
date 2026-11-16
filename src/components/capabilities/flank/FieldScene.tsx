@@ -11,17 +11,23 @@ import { buildFieldWorld } from "./field/build";
 import { createDrone, droneAt, makeDroneState } from "./field/drone";
 import { pathSlope, pathZ, SWEEP_RATE, WALK_SPEED, FIELD_PERIOD, wrapX } from "./field/terrain";
 
-/** Clock value the scene opens on (and freezes at under reduced motion): a map already half built. */
+/** Clock value the scene opens on: a map already half built. */
 const START_T = 15;
-const STILL_T = 21.3;
+/**
+ * The reduced-motion still: the drone scanning the top of the crate stack the
+ * quadruped cannot see over, a data packet on the live link, a settled
+ * inter-robot constraint between the two trajectories, the quadruped's beam
+ * pointing ahead (and everything that matters clear of the stage's inset).
+ */
+const STILL_T = 24.27;
 
 /**
  * Camera framing: look-at point relative to the quadruped and the viewing
  * direction. The pair is framed as one subject: the quadruped low and left of
  * centre, the drone above and ahead of it, the map trailing away to the left.
  */
-const LOOK = new THREE.Vector3(0.3, 0.85, -0.25);
-const VIEW_DIR = new THREE.Vector3(1.5, 2.1, 3.3).normalize();
+const LOOK = new THREE.Vector3(0.3, 0.88, -0.25);
+const VIEW_DIR = new THREE.Vector3(1.5, 1.77, 3.3).normalize();
 const VIEW_DIST = 6.0;
 
 /**
@@ -93,15 +99,17 @@ export default function FieldScene({ quality, reduce }: FlankSceneProps) {
     drone.group.updateMatrixWorld(true);
     drone.sensor.getWorldPosition(tmp.scanner);
 
-    // Camera: follows the sway softly; backs off on narrow panels so the pair
-    // and the map still fit.
+    // Camera: follows the sway softly. Narrow (phone) panels trade the
+    // trailing map for size: the pair is centred in the square frame and the
+    // camera moves in a little, so both machines stay large at 340 px.
     const aspect = size.width / Math.max(1, size.height);
-    tmp.look.set(LOOK.x, LOOK.y, LOOK.z + z * 0.75);
+    const narrow = THREE.MathUtils.clamp((1.3 - aspect) / 0.3, 0, 1);
+    tmp.look.set(LOOK.x + 0.35 * narrow, LOOK.y + 0.04 * narrow, LOOK.z + z * 0.75);
     const cam = camRef.current;
     if (cam) {
       cam.position
         .copy(VIEW_DIR)
-        .multiplyScalar(VIEW_DIST * Math.pow(Math.max(1, 1.3 / aspect), 0.6))
+        .multiplyScalar(VIEW_DIST * (1 - 0.08 * narrow))
         .add(tmp.look);
       cam.lookAt(tmp.look);
     }

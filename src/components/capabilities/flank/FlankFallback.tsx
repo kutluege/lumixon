@@ -70,6 +70,50 @@ const CLOUD = Array.from({ length: 110 }, (_, i) => {
   return { x: f(x), y: f(y), r: ahead ? "1.15" : "0.85", o: ahead ? (0.5 + hash(i + 0.5) * 0.4).toFixed(2) : "0.2" };
 });
 
+/* ── field: the survey drone above the quadruped, its scan and its share of the map ── */
+/* Where the drone hovers in the frame (airframe centre) and its drawing scale. */
+const DRONE_AT = { x: 250, y: 57, s: 1.5 };
+const DRONE_SENSOR_LOCAL = { x: 15, y: 12 };
+const DRONE_SENSOR = {
+  x: DRONE_AT.x + DRONE_SENSOR_LOCAL.x * DRONE_AT.s,
+  y: DRONE_AT.y + DRONE_SENSOR_LOCAL.y * DRONE_AT.s,
+};
+/** Rotor discs (local units): two behind the airframe, two in front of it. */
+const ROTORS_FAR = [
+  { x: 31, y: -14 },
+  { x: -35, y: -12 },
+];
+const ROTORS_NEAR = [
+  { x: 38, y: -2 },
+  { x: -29, y: 0 },
+];
+const AIRFRAME = "M-22 -3 L-16 -8 L14 -9 L22 -4 L22 2 L14 6 L-16 6 Z";
+const BATTERY = "M-13 -8.4 L7 -9 L7 -11.8 L-13 -11 Z";
+/** The scan line: where the drone's cross-track scan plane meets the terrain rows (far row to near row). */
+const scanX = (r: number, back: number) => 312 - r * 15 - back * 13;
+const ROW_STEPS = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2];
+const SCAN_LINE = ROW_STEPS.map((r) => ({ x: scanX(r, 0), y: terrainY(scanX(r, 0), r) }));
+const SCAN_PATH = SCAN_LINE.map((p, i) => `${i ? "L" : "M"}${f(p.x)} ${f(p.y)}`).join("");
+const SCAN_FAN = `M${f(DRONE_SENSOR.x)} ${f(DRONE_SENSOR.y)}${SCAN_LINE.map((p) => `L${f(p.x)} ${f(p.y)}`).join("")}Z`;
+const SCAN_RIBS = SCAN_LINE.filter((_, i) => i % 2 === 0)
+  .map((p) => `M${f(DRONE_SENSOR.x)} ${f(DRONE_SENSOR.y)}L${f(p.x)} ${f(p.y)}`)
+  .join("");
+/** The drone's points: earlier scan lines behind the current one, fading with age. */
+const SWATH = Array.from({ length: 8 }, (_, k) =>
+  ROW_STEPS.map((r, j) => {
+    const x = scanX(r, k + 1) + (hash(k * 9 + j + 0.21) - 0.5) * 3;
+    return { x: f(x), y: f(terrainY(x, r)), o: (0.78 - k * 0.07).toFixed(2) };
+  }),
+).flat();
+/** Its trajectory in the air, trailing behind it, with keyframes. */
+const airY = (x: number) => DRONE_AT.y + 1 + 5 * Math.sin(x * 0.034 + 0.6);
+const AIR_TRAIL = (() => {
+  let d = "";
+  for (let x = -10; x <= 230; x += 12) d += `${x === -10 ? "M" : "L"}${x} ${f(airY(x))}`;
+  return d;
+})();
+const AIR_NODES = [86, 146, 206].map((x) => ({ x, y: f(airY(x)) }));
+
 /* ── the quadruped (local units, feet centre at 0,0, +x forward) ───────── */
 const BODY = "M-48 -58 L46 -62 L50 -44 L-44 -40 Z";
 const HEAD = "M46 -66 L64 -68 L67 -54 L50 -52 Z";
@@ -127,6 +171,65 @@ function Quadruped({ solid }: { solid: boolean }) {
   );
 }
 
+/** The survey quadcopter, in the solid quadruped's line language (local units, airframe centre at 0,0, +x forward). */
+function Drone() {
+  const ink = "#afc1d6";
+  const disc = (p: { x: number; y: number }, far: boolean) => (
+    <ellipse
+      key={`${p.x}`}
+      cx={p.x}
+      cy={p.y}
+      rx={16.5}
+      ry={4.6}
+      fill={ink}
+      fillOpacity={far ? 0.05 : 0.09}
+      stroke={ink}
+      strokeOpacity={far ? 0.4 : 0.7}
+      strokeWidth={0.6}
+    />
+  );
+  const motor = (p: { x: number; y: number }, far: boolean) => (
+    <rect
+      key={`${p.x}`}
+      x={p.x - 2.6}
+      y={p.y}
+      width={5.2}
+      height={6}
+      rx={1}
+      fill="#1e2443"
+      stroke={ink}
+      strokeOpacity={far ? 0.4 : 0.7}
+      strokeWidth={0.5}
+    />
+  );
+  return (
+    <g
+      transform={`translate(${DRONE_AT.x} ${DRONE_AT.y}) scale(${DRONE_AT.s})`}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      fill="none"
+    >
+      {/* far side: arms, motors, rotor discs, skid */}
+      <path d="M10 -6 L31 -10 M-12 -5 L-35 -8" stroke="#6c71a8" strokeOpacity={0.7} strokeWidth={2.2} />
+      {ROTORS_FAR.map((p) => motor(p, true))}
+      {ROTORS_FAR.map((p) => disc(p, true))}
+      <path d="M-8 5 L-10 14 M10 5 L12 14 M-18 14 L18 14" stroke={ink} strokeOpacity={0.3} strokeWidth={0.8} />
+      {/* airframe: shell, battery cover, sensor face */}
+      <path d={AIRFRAME} fill="#2e3559" stroke={ink} strokeOpacity={0.55} strokeWidth={0.7} />
+      <path d={BATTERY} fill="#4e5283" stroke={ink} strokeOpacity={0.5} strokeWidth={0.5} />
+      <path d="M-18 -1 L20 -2" stroke={ink} strokeOpacity={0.25} strokeWidth={0.7} />
+      <path d="M19 -3.4 L22 -1.5 L22 1.4 L19 3" stroke={ink} strokeOpacity={0.8} strokeWidth={0.8} />
+      {/* near side: skid, scanner, arms, motors, rotor discs */}
+      <path d="M-12 6 L-15 17 M6 6 L8 17 M-22 17 L14 17" stroke="#8d92c4" strokeOpacity={0.9} strokeWidth={1.3} />
+      <circle cx={DRONE_SENSOR_LOCAL.x} cy={DRONE_SENSOR_LOCAL.y - 1.5} r={3.8} fill="#4e5283" stroke={ink} strokeOpacity={0.6} strokeWidth={0.6} />
+      <circle cx={DRONE_SENSOR_LOCAL.x} cy={DRONE_SENSOR_LOCAL.y} r={1.2} fill={ink} fillOpacity={0.95} />
+      <path d="M12 3 L38 3 M-12 4 L-29 5" stroke="#8d92c4" strokeOpacity={0.9} strokeWidth={2.6} />
+      {ROTORS_NEAR.map((p) => motor(p, false))}
+      {ROTORS_NEAR.map((p) => disc(p, false))}
+    </g>
+  );
+}
+
 /** Dispatches to the per-scene still; the quadruped pair is drawn in this file. */
 export function FlankFallback({ kind }: { kind: FlankKind }) {
   if (kind === "pathology") return <PathologyFallback />;
@@ -139,6 +242,8 @@ function QuadrupedFallback({ kind }: { kind: "research" | "field" }) {
   const fade = `${uid}-fade`;
   const mask = `${uid}-mask`;
   const fan = `${uid}-fan`;
+  const scan = `${uid}-scan`;
+  const trail = `${uid}-trail`;
   return (
     <svg
       viewBox="0 0 400 300"
@@ -159,6 +264,15 @@ function QuadrupedFallback({ kind }: { kind: "research" | "field" }) {
           <stop offset="0" stopColor="#afc1d6" stopOpacity="0.2" />
           <stop offset="1" stopColor="#afc1d6" stopOpacity="0" />
         </radialGradient>
+        {/* drone scan plane: faint at the scanner, denser toward the terrain */}
+        <linearGradient id={scan} x1="0" y1={f(DRONE_SENSOR.y)} x2="0" y2="265" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#8d92c4" stopOpacity="0.07" />
+          <stop offset="1" stopColor="#8d92c4" stopOpacity="0.26" />
+        </linearGradient>
+        <linearGradient id={trail} x1="20" y1="0" x2="230" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#8d92c4" stopOpacity="0" />
+          <stop offset="1" stopColor="#8d92c4" stopOpacity="0.8" />
+        </linearGradient>
       </defs>
 
       {kind === "research" ? (
@@ -188,8 +302,33 @@ function QuadrupedFallback({ kind }: { kind: "research" | "field" }) {
             {CLOUD.map((p, i) => (
               <circle key={i} cx={p.x} cy={p.y} r={p.r} fill="#afc1d6" fillOpacity={p.o} />
             ))}
+            {/* the drone's share of the map: scan lines across the track, in indigo */}
+            {SWATH.map((p, i) => (
+              <circle key={i} cx={p.x} cy={p.y} r={1.05} fill="#a9adea" fillOpacity={p.o} />
+            ))}
           </g>
+          {/* drone scan plane, down to the scan line on the terrain */}
+          <path d={SCAN_FAN} fill={`url(#${scan})`} />
+          <path d={SCAN_RIBS} stroke="#8d92c4" strokeOpacity={0.3} strokeWidth={0.5} fill="none" />
+          <path d={SCAN_PATH} stroke="#c9ccf4" strokeOpacity={0.9} strokeWidth={1.1} strokeLinecap="round" fill="none" />
+          {SCAN_LINE.map((p, i) => (
+            <circle key={i} cx={f(p.x)} cy={f(p.y)} r={1.3} fill="#e6edf5" fillOpacity={0.95} />
+          ))}
+          {/* drone trajectory and keyframes; the link between the two sensor heads */}
+          <path d={AIR_TRAIL} stroke={`url(#${trail})`} strokeWidth={1} fill="none" />
+          {AIR_NODES.map((p) => (
+            <circle key={p.x} cx={p.x} cy={p.y} r={2.2} fill="#1e2443" stroke="#8d92c4" strokeOpacity={0.3 + p.x / 400} strokeWidth={0.7} />
+          ))}
+          <path
+            d={`M${f(SENSOR.x)} ${f(SENSOR.y - 5)}L${f(DRONE_SENSOR.x - 3)} ${f(DRONE_SENSOR.y + 5)}`}
+            stroke="#e6edf5"
+            strokeOpacity={0.75}
+            strokeWidth={0.9}
+            strokeDasharray="3 3.5"
+            fill="none"
+          />
           <Quadruped solid />
+          <Drone />
         </>
       )}
     </svg>

@@ -61,7 +61,7 @@ export const rotorFrag = /* glsl */ `
     float smear = pow(0.5 + 0.5 * cos(2.0 * th), 3.0);
     float disc = smoothstep(0.07, 0.16, r) * (1.0 - smoothstep(0.93, 1.0, r));
     float tip = smoothstep(0.84, 0.95, r) * (1.0 - smoothstep(0.96, 1.0, r));
-    float a = disc * (0.07 + 0.2 * smear * (0.35 + 0.65 * r)) + tip * (0.16 + 0.12 * smear);
+    float a = disc * (0.09 + 0.26 * smear * (0.35 + 0.65 * r)) + tip * (0.2 + 0.14 * smear);
     gl_FragColor = vec4(uColor, a * uOpacity);
     #include <colorspace_fragment>
   }
@@ -144,7 +144,7 @@ export const scanRayFrag = /* glsl */ `
   }
 `;
 
-/* ------------------------------------------- trajectory in the air + track */
+/* --------------------------------------------------- trajectory in the air */
 
 export const airTrailVert = /* glsl */ `
   ${fieldGlsl}
@@ -295,7 +295,7 @@ export const linkFrag = /* glsl */ `
     }
     a *= uOpacity;
     if (a < 0.004) discard;
-    // In the air the link is not part of the ground map: fade with the canvas edge / world fade of its ground end only loosely.
+    // Settled constraints melt away with the map; the live link stays with the two machines.
     gl_FragColor = vec4(col, a * mix(fieldFade(vP), 1.0, vLive));
     #include <colorspace_fragment>
   }

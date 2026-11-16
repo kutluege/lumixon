@@ -39,6 +39,7 @@ export const groundFrag = /* glsl */ `
   ${fadeGlsl}
   #define MAXF ${MAX_FOOTPRINTS}
   #define CELL 0.25
+  #define SCAN_PITCH 0.15
   uniform vec3 uObs[MAXF];
   uniform vec3 uBase;
   uniform vec3 uLit;
@@ -93,18 +94,6 @@ export const groundFrag = /* glsl */ `
     }
     col *= ao;
 
-    // Soft shadow of the drone: four rotor discs and the airframe, wide
-    // penumbra from its altitude, nudged along the key light.
-    {
-      vec2 q = vP.xz - (uDroneC.xz + vec2(0.16, -0.3));
-      float cy = cos(uDroneC.w);
-      float sy = sin(uDroneC.w);
-      q = vec2(cy * q.x - sy * q.y, sy * q.x + cy * q.y);
-      vec2 a = abs(q) - vec2(${ROTOR_ARM.toFixed(3)});
-      float sh = exp(-dot(a, a) / 0.036) * 0.85 + exp(-dot(q, q) / 0.03) * 0.75;
-      col *= 1.0 - uShadow * clamp(sh, 0.0, 1.0);
-    }
-
     // The map, where either sensor has already been: a faint occupancy grid
     // near the path, occupied cells in burgundy.
     float ageD = droneAge(vP.x, vXw, vP.y, vP.z);
@@ -118,6 +107,27 @@ export const groundFrag = /* glsl */ `
     vec2 cf = abs(fract(wp / CELL) - 0.5);
     float edge = 1.0 - smoothstep(0.38, 0.45, max(cf.x, cf.y));
     col = mix(col, uWine, occ * mapped * (0.12 + 0.3 * (1.0 - edge)));
+
+    // What the drone has surveyed: a shade more violet, hatched with its
+    // cross-track scan lines (pinned to the world), bright in its wake and
+    // settling into a faint texture that marks the swath.
+    float sl = vXw / SCAN_PITCH;
+    float strip = 1.0 - min(abs(fract(sl) - 0.5) / max(fwidth(sl), 1e-4), 1.0);
+    col += uAerial * mappedD * (0.03 + strip * (0.05 + 0.26 * exp(-max(ageD, 0.0) * 0.8)));
+
+    // Soft shadow of the drone over ground and map alike: one wide penumbra
+    // (it flies well above the ground) reaching a little further along the
+    // rotor arms, nudged along the key light.
+    {
+      vec2 q = vP.xz - (uDroneC.xz + vec2(0.16, -0.3));
+      float cy = cos(uDroneC.w);
+      float sy = sin(uDroneC.w);
+      q = vec2(cy * q.x - sy * q.y, sy * q.x + cy * q.y);
+      float d2 = dot(q, q);
+      float arms = 2.0 * abs(q.x * q.y) / (d2 + 1e-4);
+      float reach = ${ROTOR_ARM.toFixed(3)} * (1.35 + 0.45 * arms);
+      col *= 1.0 - uShadow * exp(-d2 / (reach * reach));
+    }
 
     // Live lidar: channel rings on the ground and the sweep wedge.
     float inR = 1.0 - smoothstep(LIDAR_R * 0.82, LIDAR_R, r);
@@ -144,9 +154,7 @@ export const groundFrag = /* glsl */ `
     float after = smoothstep(-0.7, 0.0, dxl) * step(dxl, 0.0);
     vec2 sp = vec2(dxl, vP.z - uSpotZ);
     float spot = exp(-dot(sp, sp) / 0.012) + 0.35 * exp(-dot(sp, sp) / 0.09);
-    col += (uAerial * (core * 0.6 + halo * 0.16 + after * after * 0.07) * inSw + uIce * spot * 0.55) * uLive;
-    // Ground only the drone has surveyed reads a shade more violet.
-    col += uAerial * mappedD * 0.034;
+    col += (uAerial * (core * 0.6 + halo * 0.16 + after * after * 0.07) * inSw + uIce * spot * 0.42) * uLive;
 
     gl_FragColor = vec4(col, fieldFade(vP));
     #include <colorspace_fragment>

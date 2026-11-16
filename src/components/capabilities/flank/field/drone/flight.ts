@@ -16,7 +16,7 @@ const K = FIELD_K;
 /** The drone flies this far ahead of the quadruped (m). */
 export const DRONE_LEAD = 0.8;
 /** Cruise altitude of the airframe centre above the corridor floor (m). */
-export const DRONE_ALT = 1.5;
+export const DRONE_ALT = 1.6;
 /** The airframe is modelled at 1:1 and drawn at this scale (a large survey aircraft, the quadruped's equal in the frame). */
 export const DRONE_SCALE = 1.25;
 /** Airframe dimensions in model units: motors at (+-arm, +-arm) in x/z, rotor radius, scanner optical centre under the nose. */
@@ -159,7 +159,8 @@ export const droneGlsl = /* glsl */ `
   /**
    * Seconds since the drone's scan line passed over a map point at relative
    * x' = xr, tile x = xw, height y, lateral z (negative: not scanned). The
-   * scan plane leans forward, so tall things are met a little earlier.
+   * scan plane leans forward from the scanner, so it reaches the top of a
+   * tall thing a little after the ground in front of it.
    */
   float droneAge(float xr, float xw, float y, float z) {
     float lead = SCAN_XR - SCAN_TAN * max(y, 0.0);

@@ -126,8 +126,17 @@ export function buildAirframe(quality: FlankQuality): Bins {
   add(b, "shell", place(drum(0.026, 0.084, 0.096, seg, 0.004), -0.085, 0, 0));
   add(b, "joint", place(drum(0.027, 0.08, 0.084, seg, 0.001), -0.085, 0, 0));
 
-  // Flank status strips (ice) and the belly plate.
-  for (const s of [-1, 1]) add(b, "glow", place(rbox(0.07, 0.004, 0.003, 0.0012, 1), 0.0, 0.014, s * 0.0755));
+  // Flanks, between the arm roots: an indigo cover (as on the quadruped's
+  // sides) under an ice status strip. Belly plate below.
+  for (const s of [-1, 1]) {
+    add(b, "panel", place(prism(roundedPoly([
+      [-0.046, -0.024, 0.008],
+      [0.04, -0.024, 0.008],
+      [0.04, 0.008, 0.008],
+      [-0.046, 0.008, 0.008],
+    ]), 0.007, 0.002, 4), 0, 0, s * 0.0752));
+    add(b, "glow", place(rbox(0.07, 0.0045, 0.003, 0.0012, 1), -0.003, 0.02, s * 0.0758));
+  }
   add(b, "core", place(rbox(0.3, 0.012, 0.1, 0.005, 2), -0.01, -0.041, 0));
 
   // Nose: the quadruped's mirror-black sensor face with its stereo pair and light line.

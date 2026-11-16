@@ -94,7 +94,7 @@ export function buildDroneOverlay(u: FieldUniforms, quality: FlankQuality): Dron
       uColor: { value: C("#f2f6fb") },
       uOpacity: { value: 1 },
       uWidth: { value: 0 },
-      uDot: { value: 11 },
+      uDot: { value: 9 },
     });
     add(new THREE.Points(geometry(1, { aEnd: [1], aSide: [0] }), dot), 4);
   }

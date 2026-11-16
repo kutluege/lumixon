@@ -95,7 +95,7 @@ export function buildFieldWorld(quality: FlankQuality) {
       uWine: { value: C("#7a2350") },
       uKey: { value: new THREE.Vector3(-0.35, 0.75, 0.55).normalize() },
       uLive: { value: 1 },
-      uShadow: { value: 0.5 },
+      uShadow: { value: 0.62 },
     },
     { depthWrite: true },
   );
